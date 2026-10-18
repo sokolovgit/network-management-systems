@@ -120,3 +120,18 @@ SSH-вхід (ключ хоста + юридична довідка Ubuntu) не
 socat без `reuseaddr` не перезапускається на тому ж порту, поки той у TIME_WAIT.
 `pysctp` віддає великі повідомлення частинами, межу визначає `MSG_EOR`; номер потоку
 видно лише після `events.data_io = True`.
+
+## Лаба 4: `labs/04-snmp` (зроблено)
+
+Скріни `img/01…19`, звіт `report/report.md` → `report/Соколов_Олександр_ІП-33_4.docx`.
+Файли в `labs/04-snmp/lab4/` (симлінк `~/lab4` у `sum`): Dockerfile, compose з бріджем
+`br-lab4` (та сама підмережа 10.10.0.0/24, що в ЛР3, тому контейнери ЛР3 знято
+`docker-compose down`), `monitor.sh` (4.4), `SOKOLOV-LAB4-MIB.txt` + `lab4mib.py` (4.5,
+`pass` у `snmpd.conf` host1). У контейнери файли кладуться `docker cp` повз вікно.
+SNMPv3-користувач `sokolov`, паролі `123456789`, рівень `authNoPriv`.
+
+Нюанси: типовий `snmpd` у контейнері падає на `agentaddress … [::1]` (нема IPv6), крок
+з `udp:161` це лікує. Перед `net-snmp-config --create-snmpv3-user` зупиняти `snmpd`.
+`snmp-mibs-downloader` стоїть лише на host2. `snmpd` кешує `ifTable` кілька секунд, тому
+моніторинг з інтервалом 1 с дає нулі й сплески – брати 5 с. Рамка `termshot` – тільки
+в межах одного рядка; у `snmpset`/`snmpget` зі збігом у відповіді set і get брати `2:`.
