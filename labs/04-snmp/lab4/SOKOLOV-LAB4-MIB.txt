@@ -1,0 +1,48 @@
+SOKOLOV-LAB4-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Gauge32, enterprises
+        FROM SNMPv2-SMI
+    DisplayString
+        FROM SNMPv2-TC;
+
+sokolovLab4 MODULE-IDENTITY
+    LAST-UPDATED "202610180000Z"
+    ORGANIZATION "KPI FICT, IP-33"
+    CONTACT-INFO "Sokolov Oleksandr"
+    DESCRIPTION  "Lab 4 MIB: host state for SNMP monitoring."
+    ::= { enterprises 99999 }
+
+labObjects OBJECT IDENTIFIER ::= { sokolovLab4 1 }
+
+labOwner OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Who maintains this host."
+    ::= { labObjects 1 }
+
+labTcpEstablished OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Number of TCP connections in ESTABLISHED state."
+    ::= { labObjects 2 }
+
+labMemAvailable OBJECT-TYPE
+    SYNTAX      Gauge32
+    UNITS       "KiB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "MemAvailable from /proc/meminfo."
+    ::= { labObjects 3 }
+
+labRootUsedPercent OBJECT-TYPE
+    SYNTAX      Integer32 (0..100)
+    UNITS       "%"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Used space on the root filesystem."
+    ::= { labObjects 4 }
+
+END
