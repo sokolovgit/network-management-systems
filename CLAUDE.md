@@ -60,6 +60,8 @@ uv run tools/termshot.py step labs/NN-slug/img/NN-name.png \
   на 56 px нижча, ніж у решти скрінів.
 - `-b`/`-a` приймають regex по тексту вікна. Виділяється перша група або весь збіг.
   Префікс `N:` бере N-й збіг.
+- Промпт `mininet>` теж розпізнається, `clear` у ньому йде як `sh clear`. `--timeout`
+  у `step` для довгих команд (`apt-get`, `pingall`).
 - `--no-wait-last`: остання команда не повертає промпт (`tcpdump`, `vim`).
   Наступний крок має завершити її сам (`C-c` тут не надіслати, тому краще
   `timeout 5 tcpdump …` або `ping -c 3`).
@@ -68,6 +70,21 @@ uv run tools/termshot.py step labs/NN-slug/img/NN-name.png \
 - У `/root/.bashrc` машини `sum` PS1 ставить заголовок вікна (`root@sum: ~/lab3`), а
   `LC_CTYPE=C.UTF-8` прибирає `?` замість `→` у `tshark`: Terminal передає з macOS
   некоректне `LC_CTYPE=UTF-8`.
+
+## Скріни браузера: `tools/browsershot.py`
+
+```
+uv run tools/browsershot.py open URL      # окремий Chrome (профіль tools/.chrome-profile), CDP :9333
+uv run tools/browsershot.py shot OUT.png [--url URL] [--py CODE] [--js CODE] [-b SELECTOR …]
+uv run tools/browsershot.py js CODE       # виконати JS на сторінці, надрукувати результат
+```
+
+- Окремий профіль без закладок і акаунтів. Знімок фоновий: `screencapture -o -l`.
+  Перед кожним знімком вікно повертається до 1280×800 через CDP, бо його можуть
+  розгорнути руками.
+- `--py` виконує код Playwright зі змінною `page` (кліки, `page.fill`, `page.check`).
+  `-b` малює червону рамку навколо елемента за селектором Playwright.
+- Chrome не резолвить `*.orb.local`: брати IP машини `sum` (192.168.139.71).
 
 ## Структура
 
@@ -104,7 +121,7 @@ macOS: так промпт `root@sum` і заголовок вікна ті са
 може не пройти. `ifdown -a` у контейнері кладе `lo` і `eth0` (порти бріджу), не
 використовувати. Клієнт `nc` без `-w 1` не виходить сам.
 
-## Лаба 3: `labs/03-ssh-over-sctp` (скріни зроблено)
+## Лаба 3: `labs/03-ssh-over-sctp` (зроблено)
 
 Скріни `img/01…26`, файли в `labs/03-…/lab3/` (симлінк `~/lab3` у `sum`): Dockerfile
 (додано `systemd`, `gcc`, `python3-dev`, `libsctp-dev` – без них не збирається pysctp і
@@ -168,3 +185,23 @@ ControlPersist-сесія: треба `pkill sshd` і очистити `~/.ansib
 `docker run --entrypoint python3`. `send_command` триває ~1 с. Монітор з падінням host1
 довше за таймаут `termshot step`: дочекатися промпту і зняти `shot`. Оригінальний
 `configure_eth1.py` лишає eth1 у стані DOWN, це й показує парсер.
+
+## Лаба 7–8: `labs/07-sdn-openflow` (зроблено)
+
+Одна методичка `LR07-08.pdf` і один звіт: скріни `img/01…35`, `report/report.md` →
+`report/Соколов_Олександр_ІП-33_7-8.docx`. compose у `lab7/` (симлінк `~/lab7`): host1
+ubuntu:20.04 (Mininet 2.2.2 + OVS 2.13.8 ставляться в контейнері), host2
+`latarc/floodlight` (лише amd64, `platform: linux/amd64`, іде через Rosetta), порт
+8080 опубліковано. Веб-інтерфейс: `http://192.168.139.71:8080/ui/pages/index.html`.
+Друге вікно Terminal (підключення до host1/`sum`) – окремий `.termshot.json`: копію
+стану перемикати руками.
+
+Нюанси: модуль `openvswitch` вантажиться в `sum` (`apt install kmod; modprobe
+openvswitch`), контейнер його не завантажить. `mn` зависає на «Adding hosts»: `mnexec`
+закриває 2^30 дескрипторів, перед `mn` потрібен `ulimit -n 65536`. Firewall Floodlight –
+білий список (увімкнений без правил ріже все, і ARP теж); правила перевіряються за
+зростанням Priority (менше число – раніше). Форма firewall завжди шле `dl-type` і
+протокол (без вибору – ICMP), тому ARP-правило додано через REST. ACL ставить у
+комутатор постійний потік `priority=30000 … actions=drop`. Потоки Forwarding мають
+`idle_timeout=5`. `ps` через пайп не обрізає рядки до 80 – додавати `cut`. Вивід `curl`
+без `\n` ламає розпізнавання промпту – `; echo`.

@@ -32,8 +32,8 @@ from PIL import Image, ImageChops, ImageDraw
 
 COLS, ROWS = 112, 20
 STATE = Path(__file__).with_name(".termshot.json")
-PROMPT = re.compile(r"^\S+@[\w-]+:\S*[#$]\s*$")
-PROMPT_START = re.compile(r"^\S+@[\w-]+:\S*[#$](\s|$)")
+PROMPT = re.compile(r"^(\S+@[\w-]+:\S*[#$]|mininet>)\s*$")
+PROMPT_START = re.compile(r"^(\S+@[\w-]+:\S*[#$]|mininet>)(\s|$)")
 ARROW = (229, 56, 59)
 
 
@@ -103,8 +103,13 @@ class Term:
 
     def run(self, cmd: str, timeout: float = 30, wait: bool = True) -> None:
         before = self.prompts()
-        self.send(cmd)
         if cmd == "clear":
+            lines = self.lines()
+            # the Mininet CLI has no clear of its own; sh runs it in the root namespace
+            if lines and lines[-1].startswith("mininet>"):
+                cmd = "sh clear"
+        self.send(cmd)
+        if cmd.endswith("clear"):
             # clear also wipes Terminal's history, so wait for a lone prompt instead
             deadline = time.time() + timeout
             while time.time() < deadline:
@@ -313,6 +318,7 @@ def main() -> None:
         action="store_true",
         help="last command does not return (e.g. tcpdump)",
     )
+    st.add_argument("--timeout", type=float, default=30)
     a = p.parse_args()
 
     if a.cmd == "open":
@@ -337,7 +343,7 @@ def main() -> None:
             t.run("clear")
             for i, c in enumerate(a.command):
                 last = i == len(a.command) - 1
-                t.run(c, wait=not (last and a.no_wait_last))
+                t.run(c, timeout=a.timeout, wait=not (last and a.no_wait_last))
         lines = t.lines()
         t.shot(a.out)
         # contents come unwrapped; marks need on-screen rows
