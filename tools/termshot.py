@@ -2,7 +2,11 @@
 # requires-python = ">=3.12"
 # dependencies = ["pillow"]
 # ///
-"""Drive a Terminal.app window with a shell in an OrbStack machine and grab Shottr screenshots of it.
+"""Drive a Terminal.app window with a shell in an OrbStack machine and screenshot it.
+
+Screenshots are taken in the background with `screencapture -l` (inactive-window look).
+Set "capture": "shottr" in .termshot.json for the old Shottr grab, which focuses Terminal.
+Calibration depends on the capture mode, so recalibrate after switching.
 
     uv run tools/termshot.py open                      # new window, prints its id
     uv run tools/termshot.py calibrate                 # once per window size/font
@@ -115,6 +119,22 @@ class Term:
             time.sleep(0.5)
 
     def shot(self, out: Path) -> None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if load_state().get("capture", "bg") == "bg":
+            # an inactive window redraws partially and leaves cursor ghosts; resetting the
+            # background colour forces a full repaint
+            osa(
+                'tell application "Terminal"',
+                f"set t to {self.tab}",
+                "set background color of t to (background color of t)",
+                "end tell",
+            )
+            time.sleep(0.3)
+            # grabs the window where it is, without focusing it: the user can keep working
+            subprocess.run(
+                ["screencapture", "-x", "-l", str(self.win), str(out)], check=True
+            )
+            return
         osa(
             'set the clipboard to ""',
             f'tell application "Terminal" to set index of window id {self.win} to 1',
@@ -130,7 +150,6 @@ class Term:
                 break
         else:
             raise RuntimeError("Shottr did not put an image on the clipboard")
-        out.parent.mkdir(parents=True, exist_ok=True)
         osa(
             f'set f to open for access POSIX file "{out.resolve()}" with write permission',
             "set eof f to 0",
