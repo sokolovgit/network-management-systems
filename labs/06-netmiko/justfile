@@ -1,0 +1,24 @@
+SKILL := env_var('HOME') / '.claude/skills/kpi-lab-report'
+REPORT := 'report/report.md'
+
+# Список доступних рецептів
+default:
+    @just --list
+
+# Згенерувати шаблон стилів (потрібен один раз на проєкт)
+reference:
+    python3 {{SKILL}}/scripts/make_reference_docx.py report/reference.docx
+
+# Відрендерити блок-схему з блоку mermaid у звіті
+diagram:
+    python3 {{SKILL}}/scripts/render_diagram.py {{REPORT}}
+
+# Зібрати звіт (ім'я для здачі: just report Прізвище_Ім'я_група_1.docx)
+report *NAME:
+    python3 {{SKILL}}/scripts/build_report.py {{REPORT}} {{NAME}}
+    python3 {{SKILL}}/scripts/export_pdf.py "report/{{ if NAME == "" { "report.docx" } else { NAME } }}"
+
+# Зібрати звіт і розставити «Продовження таблиці N» за версткою Word (macOS + Word)
+final *NAME:
+    python3 {{SKILL}}/scripts/build_report.py {{REPORT}} {{NAME}}
+    python3 {{SKILL}}/scripts/continue_tables.py "report/{{ if NAME == "" { "report.docx" } else { NAME } }}"

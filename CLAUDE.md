@@ -152,3 +152,19 @@ SNMPv3-користувач `sokolov`, паролі `123456789`, рівень `a
 Вивід плейбука має влазити в 20 рядків: `gather_facts: false`, задачі об'єднано, частини
 запускаються через `--tags`. Зупинка `ssh` на host2 не робить його UNREACHABLE, поки живе
 ControlPersist-сесія: треба `pkill sshd` і очистити `~/.ansible/cp`.
+
+## Лаба 6: `labs/06-netmiko` (зроблено)
+
+Скріни `img/01…26`, звіт `report/report.md` → `report/Соколов_Олександр_ІП-33_6.docx`.
+Файли в `labs/06-netmiko/lab6/` (симлінк `~/lab6` у `sum`): Dockerfile (Netmiko 3.4.0 +
+`cryptography==3.4.8`, `PermitRootLogin yes`), compose з бріджем `br-lab6` (контейнери ЛР5
+знято), `mgmt.py` (4.2), `configure_eth1.py` (4.3), `ipparse.py` + `ifaces.py` +
+`configure_eth1_v2.py` (3.4), `monitor.py` (3.5). Керуючий вузол – host2, скрипти в
+`/root` (кладуться `docker cp`), керований – host1, root/`12345`. Залишений стан host1
+після рестарту в 3.5: eth1 нема, ICMP увімкнено.
+
+Нюанси: новіша `cryptography` на Python 3.8 друкує `CryptographyDeprecationWarning` на
+кожен запуск. ENTRYPOINT `init`, тому разову перевірку образу робити через
+`docker run --entrypoint python3`. `send_command` триває ~1 с. Монітор з падінням host1
+довше за таймаут `termshot step`: дочекатися промпту і зняти `shot`. Оригінальний
+`configure_eth1.py` лишає eth1 у стані DOWN, це й показує парсер.
