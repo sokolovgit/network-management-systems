@@ -198,7 +198,12 @@ def draw_box(img: Image.Image, r: int, c0: int, c1: int, s: dict) -> None:
     pad = cw * 0.3
     width = max(3, round(ch * 0.1))
     ImageDraw.Draw(img).rounded_rectangle(
-        [x0 + c0 * cw - pad, y0 + r * ch + 1, x0 + c1 * cw + pad, y0 + (r + 1) * ch - 1],
+        [
+            x0 + c0 * cw - pad,
+            y0 + r * ch + 1,
+            x0 + c1 * cw + pad,
+            y0 + (r + 1) * ch - 1,
+        ],
         radius=width * 2,
         outline=ARROW,
         width=width,
@@ -233,7 +238,10 @@ def draw_arrow(
         tail = (tip[0] + off[0] * cw, tip[1] + off[1] * ch)
         if busy(*tail) and not (0 <= (tail[1] - y0) / ch < ROWS):
             return 1e9
-        pts = [(tip[0] + (tail[0] - tip[0]) * t / 40, tip[1] + (tail[1] - tip[1]) * t / 40) for t in range(4, 41)]
+        pts = [
+            (tip[0] + (tail[0] - tip[0]) * t / 40, tip[1] + (tail[1] - tip[1]) * t / 40)
+            for t in range(4, 41)
+        ]
         return sum(busy(*pt) for pt in pts)
 
     tip, off = min(candidates, key=lambda c: cost(*c))
@@ -247,9 +255,19 @@ def draw_arrow(
     ux, uy = dx / n, dy / n
     base = (tip[0] - ux * head, tip[1] - uy * head)
     d.line([tail, base], fill=ARROW, width=width)
-    d.ellipse([tail[0] - width / 2, tail[1] - width / 2, tail[0] + width / 2, tail[1] + width / 2], fill=ARROW)
+    d.ellipse(
+        [
+            tail[0] - width / 2,
+            tail[1] - width / 2,
+            tail[0] + width / 2,
+            tail[1] + width / 2,
+        ],
+        fill=ARROW,
+    )
     px, py = -uy * head * 0.55, ux * head * 0.55
-    d.polygon([tip, (base[0] + px, base[1] + py), (base[0] - px, base[1] - py)], fill=ARROW)
+    d.polygon(
+        [tip, (base[0] + px, base[1] + py), (base[0] - px, base[1] - py)], fill=ARROW
+    )
 
 
 def main() -> None:
@@ -304,6 +322,7 @@ def main() -> None:
         lines = t.lines()
         t.shot(a.out)
         # contents come unwrapped; marks need on-screen rows
+        lines = [l.expandtabs() for l in lines]
         rows = [l[i : i + COLS] for l in lines for i in range(0, max(len(l), 1), COLS)]
         if a.box or a.arrow:
             img = Image.open(a.out)
