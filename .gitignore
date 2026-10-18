@@ -15,3 +15,6 @@ out/
 
 # termshot
 tools/.termshot.json
+
+# browsershot
+tools/.chrome-profile/
