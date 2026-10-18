@@ -1,0 +1,36 @@
+- name: Firewall and bandwidth
+  hosts: all
+  gather_facts: false
+  vars:
+    open_ports: ["22", "5201"]
+  tasks:
+    - name: Allow loopback and established connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: "{{ item.iface | default(omit) }}"
+        ctstate: "{{ item.ctstate | default(omit) }}"
+        jump: ACCEPT
+      loop:
+        - { iface: lo }
+        - { ctstate: [ESTABLISHED, RELATED] }
+      tags: firewall
+    - name: Allow SSH and iperf3 from admin network
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        source: 10.10.0.0/24
+        destination_ports: "{{ open_ports }}"
+        jump: ACCEPT
+      tags: firewall
+    - name: Drop everything else
+      ansible.builtin.iptables: { chain: INPUT, policy: DROP }
+      tags: firewall
+    - name: Install iperf3
+      ansible.builtin.apt: { name: iperf3, update_cache: true }
+      tags: bandwidth
+    - name: Limit egress bandwidth on eth0
+      ansible.builtin.command: tc qdisc replace dev eth0 root tbf rate 2mbit burst 32kbit latency 400ms
+      tags: bandwidth
+    - name: Start iperf3 server
+      ansible.builtin.shell: pgrep -x iperf3 || iperf3 -s -D
+      tags: bandwidth

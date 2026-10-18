@@ -135,3 +135,20 @@ SNMPv3-користувач `sokolov`, паролі `123456789`, рівень `a
 `snmp-mibs-downloader` стоїть лише на host2. `snmpd` кешує `ifTable` кілька секунд, тому
 моніторинг з інтервалом 1 с дає нулі й сплески – брати 5 с. Рамка `termshot` – тільки
 в межах одного рядка; у `snmpset`/`snmpget` зі збігом у відповіді set і get брати `2:`.
+
+## Лаба 5: `labs/05-ansible` (зроблено)
+
+Скріни `img/01…39`, звіт `report/report.md` → `report/Соколов_Олександр_ІП-33_5.docx`.
+Файли в `labs/05-ansible/lab5/` (симлінк `~/lab5` у `sum`): Dockerfile, compose з бріджем
+`br-lab5` (контейнери ЛР4 знято `docker-compose down`), `playbook.yml` (4.3),
+`configure_eth1.yml` (4.4), `monitor.sh` (3.4), `firewall.yml` (3.5, теги `firewall` і
+`bandwidth`). На host1 вони лежать у `/root`, кладуться `docker cp`. Ansible 5.10 з PPA
+(є індекс arm64), інвентар `server1 ansible_host=10.10.0.3`, SSH root за ключем.
+Залишений стан host2: eth1 10.11.0.2/24, `icmp_echo_ignore_all=1`, iptables INPUT DROP,
+`tbf 2mbit` на eth0, `iperf3 -s -D`.
+
+Нюанси: `allow-hotplug` у контейнері не піднімається після `systemctl restart networking`
+(нема udev), тому `auto eth1`. `gateway` на eth1 без `metric` ламає `ifup` (`File exists`).
+Вивід плейбука має влазити в 20 рядків: `gather_facts: false`, задачі об'єднано, частини
+запускаються через `--tags`. Зупинка `ssh` на host2 не робить його UNREACHABLE, поки живе
+ControlPersist-сесія: треба `pkill sshd` і очистити `~/.ansible/cp`.

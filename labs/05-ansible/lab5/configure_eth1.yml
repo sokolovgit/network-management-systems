@@ -1,0 +1,32 @@
+- name: Configure eth1
+  hosts: all
+  gather_facts: false
+  vars:
+    iface: eth1
+    new_ip_address: 10.11.0.2/24
+  tasks:
+    - name: Create eth1 and check its existence
+      ansible.builtin.shell: |
+        ip link show {{ iface }} &> /dev/null || ip link add {{ iface }} type dummy
+        ip link set {{ iface }} up
+        ip link show {{ iface }} &> /dev/null || { echo "Interface does not exist"; exit 1; }
+      args:
+        executable: /bin/bash
+    - name: Add IPv4 address to eth1 and check it
+      ansible.builtin.shell: |
+        ip addr replace {{ new_ip_address }} dev {{ iface }}
+        if [[ $(ip -o -4 addr show dev {{ iface }} | wc -l) -eq 0 ]]; then
+          echo "Interface does not have an IP address"
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
+    - name: Block ICMP and check it
+      ansible.builtin.shell: |
+        echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_all
+        if [[ $(cat /proc/sys/net/ipv4/icmp_echo_ignore_all) -ne 1 ]]; then
+          echo "Pinging is not blocked"
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
