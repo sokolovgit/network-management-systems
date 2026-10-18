@@ -1,0 +1,26 @@
+- name: Automated operations
+  hosts: all
+  gather_facts: false
+  vars:
+    new_ip_address: 10.1.1.128
+    netmask: 255.255.0.0
+  tasks:
+    - name: Update network config file
+      ansible.builtin.lineinfile:
+        path: /etc/network/interfaces
+        regexp: '.+address.+'
+        line: '  address {{ new_ip_address }}'
+      notify:
+        - Restart Network Service
+    - name: Update netmask
+      ansible.builtin.lineinfile:
+        path: /etc/network/interfaces
+        regexp: '.+netmask.+'
+        line: '  netmask {{ netmask }}'
+      notify:
+        - Restart Network Service
+  handlers:
+    - name: Restart Network Service
+      ansible.builtin.service:
+        name: networking
+        state: restarted
