@@ -1,0 +1,30 @@
+services:
+  host1:
+    image: ubuntu:20.04
+    hostname: host1
+    container_name: host1
+    tty: true
+    networks:
+      default:
+        ipv4_address: 10.10.0.2
+    privileged: true
+  host2:
+    image: latarc/floodlight
+    platform: linux/amd64
+    hostname: host2
+    container_name: host2
+    tty: true
+    ports:
+      - 8080:8080
+    networks:
+      default:
+        ipv4_address: 10.10.0.3
+    privileged: true
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-lab7
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
